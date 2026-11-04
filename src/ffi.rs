@@ -1327,6 +1327,70 @@ pub extern "C" fn fc_resolve_font_chain(
     })
 }
 
+/// Resolve a font fallback chain for an explicit set of Unicode script ranges
+///
+/// Like fc_resolve_font_chain(), but builds fallback groups for the given
+/// ranges instead of the default script blocks, so scripts such as Thai or
+/// emoji get a fallback font.
+///
+/// @param cache Font cache
+/// @param families Array of CSS font family names
+/// @param families_count Number of family names
+/// @param weight Font weight
+/// @param italic Whether to match italic fonts
+/// @param oblique Whether to match oblique fonts
+/// @param scripts Array of Unicode ranges to build fallback groups for
+/// @param scripts_count Number of ranges
+/// @param trace Array to store trace messages
+/// @param trace_count Pointer to trace count (will be updated)
+/// @return Font fallback chain or NULL on error
+#[no_mangle]
+pub extern "C" fn fc_resolve_font_chain_with_scripts(
+    cache: *const FcFontCache,
+    families: *const *const c_char,
+    families_count: usize,
+    weight: FcWeight,
+    italic: PatternMatch,
+    oblique: PatternMatch,
+    scripts: *const UnicodeRange,
+    scripts_count: usize,
+    trace: *mut *mut FcTraceMsgC,
+    trace_count: *mut usize,
+) -> *mut FcFontFallbackChainC {
+    guard(ptr::null_mut(), || {
+        if cache.is_null()
+            || families.is_null()
+            || scripts.is_null()
+            || trace.is_null()
+            || trace_count.is_null()
+        {
+            return ptr::null_mut();
+        }
+
+        unsafe {
+            let cache = &*cache;
+            let families_rust = c_string_array_to_vec(families, families_count);
+            let scripts = std::slice::from_raw_parts(scripts, scripts_count);
+
+            let mut trace_msgs = Vec::new();
+            let chain = cache.resolve_font_chain_with_scripts(
+                &families_rust,
+                weight,
+                italic,
+                oblique,
+                Some(scripts),
+                &mut trace_msgs,
+            );
+
+            let (trace_c, count) = trace_msgs_to_c(&trace_msgs);
+            *trace = trace_c;
+            *trace_count = count;
+
+            Box::into_raw(Box::new(FcFontFallbackChainC { inner: chain }))
+        }
+    })
+}
+
 /// Free a font fallback chain
 #[no_mangle]
 pub extern "C" fn fc_font_chain_free(chain: *mut FcFontFallbackChainC) {

@@ -450,6 +450,29 @@
  );
 
  /**
+  * Resolve a font fallback chain for explicit Unicode script ranges
+  *
+  * Like fc_resolve_font_chain(), but builds fallback groups for the given
+  * ranges instead of the default script blocks.
+  *
+  * @param scripts Array of Unicode ranges to build fallback groups for
+  * @param scripts_count Number of ranges
+  * @return Font fallback chain or NULL on error
+  */
+ FcFontChain fc_resolve_font_chain_with_scripts(
+     FcFontCache cache,
+     const char** families,
+     size_t families_count,
+     FcWeight weight,
+     FcPatternMatch italic,
+     FcPatternMatch oblique,
+     const FcUnicodeRange* scripts,
+     size_t scripts_count,
+     FcTraceMsg** trace,
+     size_t* trace_count
+ );
+
+ /**
   * Free a font fallback chain
   */
  void fc_font_chain_free(FcFontChain chain);
