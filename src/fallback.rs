@@ -187,6 +187,80 @@ impl FontFallbackChain {
     }
 }
 
+/// A font that covers every shaped codepoint of a text, with the traits a
+/// consumer needs to choose among such fonts.
+#[cfg(all(feature = "std", feature = "parsing"))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FontCandidate {
+    pub id: FontId,
+    /// The font's GSUB or GPOS declares one of the requested OpenType script
+    /// tags. Always true when no tag was requested.
+    pub supports_script: bool,
+    /// The font carries color glyphs: COLR with CPAL, CBDT with CBLC, sbix, or SVG.
+    pub color: bool,
+}
+
+/// Unicode Default_Ignorable_Code_Point, plus controls. Shaping consumes
+/// these without needing a glyph, so coverage checks skip them.
+pub fn is_default_ignorable(c: char) -> bool {
+    c.is_control()
+        || matches!(
+            c as u32,
+            0x00AD
+                | 0x034F
+                | 0x061C
+                | 0x115F..=0x1160
+                | 0x17B4..=0x17B5
+                | 0x180B..=0x180F
+                | 0x200B..=0x200F
+                | 0x202A..=0x202E
+                | 0x2060..=0x206F
+                | 0x3164
+                | 0xFE00..=0xFE0F
+                | 0xFEFF
+                | 0xFFA0
+                | 0xE0000..=0xE0FFF
+        )
+}
+
+#[cfg(all(feature = "std", feature = "parsing"))]
+impl FontFallbackChain {
+    /// Every font in the chain whose cmap covers all non-ignorable codepoints
+    /// of `text`, best first: fonts that declare one of `script_tags` (OpenType
+    /// script tags such as `arab`) come before those that do not, and chain
+    /// order breaks ties. Fonts that cover only part of `text` are omitted, so
+    /// a cluster is never split across fonts by this call. A font whose
+    /// tables cannot be read is kept, with both traits false.
+    pub fn candidates_for_text(
+        &self,
+        cache: &FcFontCache,
+        text: &str,
+        script_tags: &[u32],
+    ) -> Vec<FontCandidate> {
+        let needed: Vec<u32> = text
+            .chars()
+            .filter(|c| !is_default_ignorable(*c))
+            .map(|c| c as u32)
+            .collect();
+        let mut supported = Vec::new();
+        let mut unsupported = Vec::new();
+        for font in self.fonts() {
+            if !needed.iter().all(|cp| covers(&font.unicode_ranges, *cp)) {
+                continue;
+            }
+            let (supports_script, color) = cache.font_script_and_color(&font.id, script_tags);
+            let candidate = FontCandidate { id: font.id, supports_script, color };
+            if supports_script {
+                supported.push(candidate);
+            } else {
+                unsupported.push(candidate);
+            }
+        }
+        supported.extend(unsupported);
+        supported
+    }
+}
+
 /// Memo key for resolved chains. The scripts are hashed in canonical form,
 /// so `None` and an explicit default set share a slot and order does not
 /// matter.

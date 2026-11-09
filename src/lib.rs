@@ -94,6 +94,8 @@ pub use config::{FcFallbackConfig, FcScriptFallback, GenericFamily};
 use fallback::FontChainCacheKey;
 #[cfg(feature = "std")]
 pub use fallback::{CssFallbackGroup, FontFallbackChain, ScriptFallbackGroup};
+#[cfg(all(feature = "std", feature = "parsing"))]
+pub use fallback::FontCandidate;
 
 #[cfg(feature = "ffi")]
 pub mod ffi;
@@ -1600,6 +1602,43 @@ impl FcFontCache {
         }
     }
 
+    /// Whether the font declares one of `script_tags` in GSUB or GPOS (true
+    /// when no tag is requested), and whether it carries color glyphs.
+    #[cfg(all(feature = "std", feature = "parsing"))]
+    pub(crate) fn font_script_and_color(&self, id: &FontId, script_tags: &[u32]) -> (bool, bool) {
+        use allsorts::{binary::read::ReadScope, font_data::FontData, tables::FontTableProvider, tag};
+
+        let unreadable = (script_tags.is_empty(), false);
+        let Some(bytes) = self.get_font_bytes(id) else {
+            return unreadable;
+        };
+        let index = match self.get_font_by_id(id) {
+            Some(OwnedFontSource::Disk(path)) => path.font_index,
+            Some(OwnedFontSource::Memory(font)) => font.font_index,
+            None => return unreadable,
+        };
+        let scope = ReadScope::new(bytes.as_slice());
+        let Ok(file) = scope.read::<FontData<'_>>() else {
+            return unreadable;
+        };
+        let Ok(provider) = file.table_provider(index) else {
+            return unreadable;
+        };
+        let color = (provider.has_table(tag::COLR) && provider.has_table(tag::CPAL))
+            || (provider.has_table(tag::CBDT) && provider.has_table(tag::CBLC))
+            || provider.has_table(tag::SBIX)
+            || provider.has_table(tag::SVG);
+        let supports = script_tags.is_empty()
+            || [tag::GSUB, tag::GPOS].into_iter().any(|table| {
+                provider
+                    .table_data(table)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|data| layout_declares_script(&data, script_tags))
+            });
+        (supports, color)
+    }
+
     /// Returns an empty font cache (no_std / no filesystem).
     #[cfg(not(feature = "std"))]
     pub fn build() -> Self {
@@ -2915,6 +2954,25 @@ fn parse_lcdfilter_const(value: &str) -> Option<FcLcdFilter> {
 struct ParsedFontFace {
     pattern: FcPattern,
     font_index: usize,
+}
+
+/// Whether a GSUB or GPOS table's script list names one of `script_tags`.
+/// Reads only the header and the script records, not the lookups.
+#[cfg(all(feature = "std", feature = "parsing"))]
+fn layout_declares_script(table: &[u8], script_tags: &[u32]) -> bool {
+    let be16 = |at: usize| table.get(at..at + 2).map(|b| u16::from_be_bytes([b[0], b[1]]) as usize);
+    let Some(list) = be16(4) else {
+        return false;
+    };
+    let Some(count) = be16(list) else {
+        return false;
+    };
+    (0..count).any(|record| {
+        let at = list + 2 + record * 6;
+        table
+            .get(at..at + 4)
+            .is_some_and(|b| script_tags.contains(&u32::from_be_bytes([b[0], b[1], b[2], b[3]])))
+    })
 }
 
 /// Parse all font table data from a single font face and return the extracted patterns.

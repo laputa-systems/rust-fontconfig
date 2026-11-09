@@ -1490,6 +1490,67 @@ pub extern "C" fn fc_resolved_runs_free(runs: *mut FcResolvedFontRunC, count: us
     })
 }
 
+/// C-compatible font candidate for a text
+#[repr(C)]
+pub struct FcFontCandidateC {
+    font_id: FcFontIdC,
+    supports_script: bool,
+    has_color: bool,
+}
+
+/// List every font in a chain that covers all of `text`, best first
+#[no_mangle]
+pub extern "C" fn fc_chain_candidates_for_text(
+    chain: *const FcFontFallbackChainC,
+    cache: *const FcFontCache,
+    text: *const c_char,
+    script_tags: *const u32,
+    script_tags_count: usize,
+    candidates_count: *mut usize,
+) -> *mut FcFontCandidateC {
+    guard(ptr::null_mut(), || {
+        if chain.is_null()
+            || cache.is_null()
+            || text.is_null()
+            || candidates_count.is_null()
+            || (script_tags.is_null() && script_tags_count != 0)
+        {
+            return ptr::null_mut();
+        }
+
+        unsafe {
+            *candidates_count = 0;
+            let text = CStr::from_ptr(text).to_string_lossy();
+            let tags: &[u32] = if script_tags_count == 0 {
+                &[]
+            } else {
+                slice::from_raw_parts(script_tags, script_tags_count)
+            };
+            let candidates = (*chain).inner.candidates_for_text(&*cache, &text, tags);
+            if candidates.is_empty() {
+                return ptr::null_mut();
+            }
+            let candidates: Vec<FcFontCandidateC> = candidates
+                .iter()
+                .map(|candidate| FcFontCandidateC {
+                    font_id: FcFontIdC::from_fontid(&candidate.id),
+                    supports_script: candidate.supports_script,
+                    has_color: candidate.color,
+                })
+                .collect();
+            let (ptr, len) = vec_into_raw_parts(candidates);
+            *candidates_count = len;
+            ptr
+        }
+    })
+}
+
+/// Free an array of font candidates
+#[no_mangle]
+pub extern "C" fn fc_font_candidates_free(candidates: *mut FcFontCandidateC, count: usize) {
+    guard((), || unsafe { free_raw_vec(candidates, count) })
+}
+
 /// Get the original CSS font stack from a font chain
 #[no_mangle]
 pub extern "C" fn fc_chain_get_original_stack(

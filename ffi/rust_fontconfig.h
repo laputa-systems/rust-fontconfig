@@ -517,6 +517,40 @@
  void fc_resolved_runs_free(FcResolvedFontRun* runs, size_t count);
 
  /**
+  * A font that covers a whole text
+  */
+ typedef struct {
+     FcFontId font_id;
+     bool supports_script;  /**< GSUB or GPOS declares one of the requested script tags (true if none requested) */
+     bool has_color;        /**< COLR+CPAL, CBDT+CBLC, sbix, or SVG glyphs */
+ } FcFontCandidate;
+
+ /**
+  * List the fonts of a chain whose cmap covers every non-ignorable codepoint
+  * of a text, best first. Fonts declaring one of the OpenType script tags
+  * (for example 'arab' as 0x61726162) come before those that do not; chain
+  * order breaks ties. Fonts covering only part of the text are omitted, so
+  * pass a whole shaping cluster to keep it in one font.
+  *
+  * @param script_tags OpenType script tags, or NULL with a zero count
+  * @param candidates_count Receives the number of candidates (0 on none)
+  * @return Candidates or NULL (free with fc_font_candidates_free)
+  */
+ FcFontCandidate* fc_chain_candidates_for_text(
+     FcFontChain chain,
+     FcFontCache cache,
+     const char* text,
+     const uint32_t* script_tags,
+     size_t script_tags_count,
+     size_t* candidates_count
+ );
+
+ /**
+  * Free an array of font candidates
+  */
+ void fc_font_candidates_free(FcFontCandidate* candidates, size_t count);
+
+ /**
   * Get the original CSS font stack from a font chain
   * @param chain The font chain
   * @param stack_count Pointer to store number of family names
