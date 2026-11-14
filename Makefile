@@ -34,7 +34,7 @@ else
   endif
 endif
 
-.PHONY: all clean linux mac win
+.PHONY: all clean lint linux mac win
 
 linux: $(LIB_PREFIX)$(LIB_NAME)$(STATIC_EXT) $(LIB_PREFIX)$(LIB_NAME)$(DYNAMIC_EXT) example example_registry
 
@@ -78,3 +78,5 @@ clean:
 	rm -f $(LIB_PREFIX)$(LIB_NAME)$(STATIC_EXT) $(LIB_PREFIX)$(LIB_NAME)$(DYNAMIC_EXT)
 	rm -f $(LIB_NAME)$(STATIC_EXT) $(LIB_NAME)$(DYNAMIC_EXT)
 	cargo clean
+lint:
+	cargo clippy --workspace --all-targets --locked
