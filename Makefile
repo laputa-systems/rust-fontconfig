@@ -79,4 +79,4 @@ clean:
 	rm -f $(LIB_NAME)$(STATIC_EXT) $(LIB_NAME)$(DYNAMIC_EXT)
 	cargo clean
 lint:
-	cargo clippy --workspace --all-targets --locked
+	cargo clippy --workspace --all-targets
