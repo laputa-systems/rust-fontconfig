@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-26.04, windows-latest, xcode-27]
         features:
           - ""  # default = std
           - "--no-default-features --features std"
@@ -29,8 +29,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
     - name: Check
       run: cargo check ${{ matrix.features }}
     - name: Build
@@ -54,21 +52,19 @@ jobs:
           # iOS
           - target: aarch64-apple-ios
             features: "--no-default-features --features parsing"
-            os: macos-latest
+            os: xcode-27
           # iOS Simulator
           - target: aarch64-apple-ios-sim
             features: "--no-default-features --features parsing"
-            os: macos-latest
+            os: xcode-27
           # Android
           - target: aarch64-linux-android
             features: "--no-default-features --features parsing"
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os || 'ubuntu-26.04' }}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: ${{ matrix.target }}
+    - name: Install target
+      run: rustup target add ${{ matrix.target }}
     - name: Check
       run: cargo check --lib --target ${{ matrix.target }} ${{ matrix.features }}
 
@@ -77,7 +73,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             lib_prefix: lib
             static_ext: .a
             dynamic_ext: .so
@@ -92,7 +88,7 @@ jobs:
             static_ext: .a
             dynamic_ext: .dll
             compiler: gcc
-          - os: macos-latest
+          - os: xcode-27
             lib_prefix: lib
             static_ext: .a
             dynamic_ext: .dylib
@@ -102,9 +98,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
 
     - name: Install GNU target (Windows GCC)
       if: matrix.os == 'windows-latest' && matrix.compiler == 'gcc'
@@ -131,7 +124,7 @@ jobs:
       shell: bash
 
     - name: Install build tools (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-26.04'
       run: sudo apt-get update && sudo apt-get install -y build-essential
 
     # Build C examples
@@ -169,11 +162,11 @@ jobs:
     # Run C examples
 
     - name: Set LD_LIBRARY_PATH (Linux)
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-26.04'
       run: echo "LD_LIBRARY_PATH=$(pwd):$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Set DYLD_LIBRARY_PATH (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'xcode-27'
       run: echo "DYLD_LIBRARY_PATH=$(pwd):$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Set PATH for DLL (Windows)
