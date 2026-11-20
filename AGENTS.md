@@ -10,4 +10,4 @@
 - Edit tier: `cargo test --features ffi,cache --test candidates` or `--test ffi_script_chain`; build cost depends on cache.
 - Change tier: `make test` and `make lint`; tests include Rust and C API component contracts, with system-font cases ignored when unavailable.
 - Scenario tier: the ignored installed-font test in `tests/candidates.rs` needs the named Noto and Arabic fonts. No Full benchmark is configured.
-- Known flake: `waiting_for_fonts_resolves_no_chain` failed 1/5 full runs at base cf9f073 and 0/5 in the current tree under `cpu-guard --cores 4`; see DSLP-7.
+- Known flake: `waiting_for_fonts_resolves_no_chain` failed 1/5 full runs at base cf9f073 and 0/5 in the current tree under `cpu-guard --cores 4`; see RFC-1.
