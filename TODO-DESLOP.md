@@ -9,15 +9,6 @@ Not started.
 
 ## Tickets
 
-### DSLP-5 · P2 · Dead code: tools and debloat
-
-- **Area:** deslop · dead code
-- **Where:** whole repository (our changes)
-- **Problem:** No dead-code scan has run.
-- **Recommendation:** Run the deslop Dead code step. Accept: tools clean or allowlisted with reasons; walk-backs filed as Needs owner tickets.
-- **Fix with:** deslop
-- **Effort:** M
-
 ### DSLP-6 · P2 · Recognize all default-ignorable code points
 
 - **Area:** font candidates
