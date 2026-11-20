@@ -80,3 +80,6 @@ clean:
 	cargo clean
 lint:
 	cargo clippy --workspace --all-targets
+
+test:
+	cargo test --features ffi,cache

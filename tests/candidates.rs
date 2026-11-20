@@ -7,6 +7,18 @@ use rust_fontconfig::{
 const LATN: u32 = u32::from_be_bytes(*b"latn");
 const ARAB: u32 = u32::from_be_bytes(*b"arab");
 
+#[test]
+fn default_ignorable_distinguishes_format_controls_and_letters() {
+    assert!(rust_fontconfig::fallback::is_default_ignorable('\u{200D}'));
+    assert!(!rust_fontconfig::fallback::is_default_ignorable('a'));
+    for c in ['\u{FFF0}', '\u{FFF8}', '\u{1BCA0}', '\u{1BCA3}', '\u{1D173}', '\u{1D17A}'] {
+        assert!(rust_fontconfig::fallback::is_default_ignorable(c), "{c:?}");
+    }
+    for c in ['\u{FFEF}', '\u{FFF9}', '\u{1BC9F}', '\u{1BCA4}', '\u{1D172}', '\u{1D17B}'] {
+        assert!(!rust_fontconfig::fallback::is_default_ignorable(c), "{c:?}");
+    }
+}
+
 fn serif_font() -> (FcPattern, FcFont) {
     let pattern = FcPattern {
         name: Some("Instrument Serif".to_string()),
@@ -63,6 +75,7 @@ fn candidates_cover_the_whole_text_and_report_script_support() {
     assert!(chain.candidates_for_text(&cache, "\u{628}", &[ARAB]).is_empty());
     assert!(chain.candidates_for_text(&cache, "a\u{628}", &[]).is_empty(), "partial coverage is not a candidate");
     assert_eq!(chain.candidates_for_text(&cache, "a\u{200D}\u{FE0F}", &[LATN]).len(), 1, "ignorables need no glyph");
+    assert_eq!(chain.candidates_for_text(&cache, "a\u{FFF0}\u{1BCA0}\u{1D173}", &[LATN]).len(), 1, "format controls need no glyph");
 }
 
 #[test]

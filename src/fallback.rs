@@ -219,6 +219,9 @@ pub fn is_default_ignorable(c: char) -> bool {
                 | 0xFE00..=0xFE0F
                 | 0xFEFF
                 | 0xFFA0
+                | 0xFFF0..=0xFFF8
+                | 0x1BCA0..=0x1BCA3
+                | 0x1D173..=0x1D17A
                 | 0xE0000..=0xE0FFF
         )
 }
