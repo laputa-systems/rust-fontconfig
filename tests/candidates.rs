@@ -7,6 +7,12 @@ use rust_fontconfig::{
 const LATN: u32 = u32::from_be_bytes(*b"latn");
 const ARAB: u32 = u32::from_be_bytes(*b"arab");
 
+#[test]
+fn default_ignorable_distinguishes_format_controls_and_letters() {
+    assert!(rust_fontconfig::fallback::is_default_ignorable('\u{200D}'));
+    assert!(!rust_fontconfig::fallback::is_default_ignorable('a'));
+}
+
 fn serif_font() -> (FcPattern, FcFont) {
     let pattern = FcPattern {
         name: Some("Instrument Serif".to_string()),

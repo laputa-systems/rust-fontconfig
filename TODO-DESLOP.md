@@ -1,5 +1,5 @@
 Prefix: DSLP
-Next: 7
+Next: 8
 
 Deslop campaign backlog ([plan](https://github.com/laputa-systems/stuff/blob/main/docs/campaigns/deslop.md), tier E). One agent works this file with the `deslop` skill: take the lowest-numbered open ticket whose area does not start with `Needs owner ·`. After DSLP-5, work the open P1 and P2 findings, then fill in `## Report` below.
 
@@ -8,15 +8,6 @@ Deslop campaign backlog ([plan](https://github.com/laputa-systems/stuff/blob/mai
 Not started.
 
 ## Tickets
-
-### DSLP-4 · P2 · Tests: coverage, boundary gaps, mutation
-
-- **Area:** deslop · tests
-- **Where:** test suites and CI
-- **Problem:** Coverage and mutation results are unmeasured; no deslop mutation lane exists.
-- **Recommendation:** Run the deslop Tests step. Accept: no undispositioned survivor in critical code, the test cost budget holds, and the lane is green where the tools are mirrored.
-- **Fix with:** deslop
-- **Effort:** M
 
 ### DSLP-5 · P2 · Dead code: tools and debloat
 
@@ -35,4 +26,13 @@ Not started.
 - **Recommendation:** Cover the complete Unicode property and retain a regression at the candidate boundary.
 - **Fix with:** root-cause
 - **Effort:** S
+
+### DSLP-7 · P3 · Stabilize registry memo assertion during background builds
+
+- **Area:** deslop · tests
+- **Where:** tests/registry_completion.rs:135; src/lib.rs:1517
+- **Problem:** Under cpu-guard --cores 4 the existing waiting_for_fonts_resolves_no_chain full-suite test failed 1 of 5 times at base cf9f073 and 0 of 5 times in the current tree; it observed one memo entry instead of two. An unproven hypothesis is that a background font insertion clears the memo between resolutions.
+- **Recommendation:** Determine the interleaving and make the test or registry synchronization deterministic without weakening the behavior contract.
+- **Fix with:** root-cause
+- **Effort:** M
 
