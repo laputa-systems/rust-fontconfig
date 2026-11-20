@@ -9,15 +9,6 @@ Not started.
 
 ## Tickets
 
-### DSLP-6 · P2 · Recognize all default-ignorable code points
-
-- **Area:** font candidates
-- **Where:** src/fallback.rs:205
-- **Problem:** U+1BCA0 has the Unicode Default_Ignorable_Code_Point property but is_default_ignorable returns false; candidate coverage can reject text for a character that requires no glyph. A focused test fails and the pinned Rust Unicode property reports true.
-- **Recommendation:** Cover the complete Unicode property and retain a regression at the candidate boundary.
-- **Fix with:** root-cause
-- **Effort:** S
-
 ### DSLP-7 · P3 · Stabilize registry memo assertion during background builds
 
 - **Area:** deslop · tests
