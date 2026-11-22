@@ -74,10 +74,18 @@ include/rust_fontconfig.h: ffi/rust_fontconfig.h
 	cp ffi/rust_fontconfig.h include/
 
 clean:
-	rm -f example example.exe example_registry example_registry.exe
-	rm -f $(LIB_PREFIX)$(LIB_NAME)$(STATIC_EXT) $(LIB_PREFIX)$(LIB_NAME)$(DYNAMIC_EXT)
-	rm -f $(LIB_NAME)$(STATIC_EXT) $(LIB_NAME)$(DYNAMIC_EXT)
-	cargo clean
+	@for artifact in ./target; do \
+	  if test -L "$$artifact" || { test -e "$$artifact" && ! test -d "$$artifact"; }; then \
+	    printf '%s\n' "make clean: $$artifact must be a local build directory" >&2; exit 1; \
+	  fi; \
+	done
+	@for artifact in ./example ./example.exe ./example_registry ./example_registry.exe ./librust_fontconfig.a ./librust_fontconfig.so ./librust_fontconfig.dylib ./rust_fontconfig.lib ./rust_fontconfig.dll; do \
+	  if test -L "$$artifact" || { test -e "$$artifact" && ! test -f "$$artifact"; }; then \
+	    printf '%s\n' "make clean: $$artifact must be a local build file" >&2; exit 1; \
+	  fi; \
+	done
+	rm -rf -- ./target
+	rm -f -- ./example ./example.exe ./example_registry ./example_registry.exe ./librust_fontconfig.a ./librust_fontconfig.so ./librust_fontconfig.dylib ./rust_fontconfig.lib ./rust_fontconfig.dll
 lint:
 	cargo clippy --workspace --all-targets
 

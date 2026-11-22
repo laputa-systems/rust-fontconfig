@@ -1,5 +1,6 @@
 ## Verification
 
+- `make clean` removes the checkout’s Cargo target directory, local example executables, and built libraries.
 - `make test`: Rust tests with `ffi,cache`; warm 2.29s on the observed host, 79 passed and 2 ignored. The cache feature lets the registry example compile.
 - `make lint`: workspace Clippy across targets; cold 91.51s on the observed host.
 - Fork Rust API: candidate coverage, ordering, and `is_default_ignorable` in `tests/candidates.rs`.
