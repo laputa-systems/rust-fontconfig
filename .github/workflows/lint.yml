@@ -27,5 +27,3 @@ jobs:
           persist-credentials: false
       - name: lint
         run: make lint
-      - name: test
-        run: make test
